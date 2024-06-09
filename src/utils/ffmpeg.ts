@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
+import { Response } from 'express';
 import ffmpeg from 'fluent-ffmpeg';
+import { PassThrough } from 'stream';
+import Ffmpeg from 'fluent-ffmpeg';
 
 const VIDEOS_PATH = '../../videos/';
 
@@ -15,14 +18,13 @@ export function setFFmpegBinaryPath() {
 
 export function checkVideoNameAndGetPath(name: string): string | undefined {
     const filePath = path.join(__dirname, VIDEOS_PATH, name);
-    console.log(name);
     if (!fs.existsSync(filePath)) {
         return;
     }
     return filePath;
 }
 
-export async function analyzeVideo(videoFilePath: string): Promise<any[]> {
+export async function getIframeMetadata(videoFilePath: string): Promise<any[]> {
     return new Promise((resolve, reject) => {
         const command = `ffprobe -show_frames -print_format json "${videoFilePath}"`;
 
@@ -43,39 +45,29 @@ export async function analyzeVideo(videoFilePath: string): Promise<any[]> {
 }
 
 
-// export async function getVideoWithIndex(videoFilePath: string, groupIndex: number): Promise<any | undefined> {
-//     return new Promise((resolve, reject) => {
-//     const iFrames: any[] = await analyzeVideo(videoFilePath);
+export async function getVideoDuration(videoFilePath: string) {
+    return new Promise((resolve, reject) => {
+        ffmpeg.ffprobe(videoFilePath, (err, metadata) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(metadata.format.duration);
+            }
+        });
+    });
+}
 
-//     if (groupIndex < 0 || groupIndex >= iFrames.length) {
-//         reject('Invalid group index');
-//         return;
-//     }
+export async function getVideoSegmentCommand(videoFilePath: string, iFrameMetadata: any[], groupIndex: number, res: Response): Promise<ffmpeg.FfmpegCommand> {
+    const videoDuration = Number(await getVideoDuration(videoFilePath));
+    const startTime = Number(iFrameMetadata[groupIndex].pts_time);
+    const endTime = (groupIndex + 1 < iFrameMetadata.length) ? Number(iFrameMetadata[groupIndex + 1].pts_time) : videoDuration;
+    const duration = endTime - startTime;
 
-//     const startTime = iFrames[groupIndex].pkt_pts_time;
-//     const endTime = (groupIndex + 1 < iFrames.length) ? iFrames[groupIndex + 1].pkt_pts_time : null;
-
-//     const command = ffmpeg(videoFilePath)
-//         .setStartTime(startTime)
-//         .outputOptions('-c copy'); // Copy the codec without re-encoding
-
-//     if (endTime) {
-//         command.setDuration(endTime - startTime);
-//     }
-
-//     res.setHeader('Content-Disposition', `attachment; filename="${groupIndex}.mp4"`);
-//     res.setHeader('Content-Type', 'video/mp4');
-
-//     command
-//         .format('mp4')
-//         .on('error', (err) => {
-//             console.error('Error processing video:', err);
-//             res.status(500).send('Error processing video');
-//         })
-//         .pipe(res, { end: true });
-
-// } catch (error) {
-//     console.error('Error analyzing video:', error);
-//     res.status(500).send('Error analyzing video');
-// }
-// }
+    // Configure ffmpeg to stream the video directly
+    return ffmpeg(videoFilePath)
+        .setStartTime(startTime)
+        .setDuration(duration)
+        .outputOptions('-c', 'copy') // Copy without re-encoding
+        .outputOptions('-movflags', 'frag_keyframe+empty_moov+faststart') // Make the MP4 container suitable for streaming
+        .format('mp4'); // Use MP4 format
+}
