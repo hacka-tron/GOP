@@ -3,7 +3,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import ffmpeg from 'fluent-ffmpeg';
 
-const VIDEOS_PATH = '../videos/';
+const VIDEOS_PATH = '../../videos/';
 
 export function setFFmpegBinaryPath() {
     if (!process.env.FFMPEG_BINARY_PATH) {
