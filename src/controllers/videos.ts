@@ -1,17 +1,10 @@
 import { Request, Response } from 'express';
-import { getIframeMetadata, checkVideoNameAndGetPath, getVideoSegmentCommand} from '../utils/ffmpeg';
+import { getIframeMetadata, getVideoSegmentCommand} from '../utils/ffmpeg';
 import { PassThrough } from 'stream';
 
 export async function getIFrames(req: Request, res: Response) {
-    const videoName = req.params.videoName;
-    const videoFilePath = checkVideoNameAndGetPath(videoName);
-    if (!videoFilePath) {
-        res.status(404).send('Video not found');
-        return;
-    }
-
     try {
-        const framesMetadata = await getIframeMetadata(videoFilePath);
+        const framesMetadata = await getIframeMetadata(req.params.videoFilePath);
         res.json(framesMetadata);
     } catch (error) {
         console.error('Error analyzing video:', error);
@@ -20,16 +13,9 @@ export async function getIFrames(req: Request, res: Response) {
 }
 
 export async function getGOPVideo(req: Request, res: Response) {
-    const videoName = req.params.videoName;
-    const videoFilePath = checkVideoNameAndGetPath(videoName);
-
-    if (!videoFilePath) {
-        res.status(404).send('Video not found');
-        return;
-    }
 
     const groupIndex = Number(req.params.groupIndex);
-    const iFrameMetadata = await getIframeMetadata(videoFilePath);
+    const iFrameMetadata = await getIframeMetadata(req.params.videoFilePath);
 
     if (groupIndex < 0 || groupIndex >= iFrameMetadata.length) {
         res.status(400).send('Invalid iFrame index');
@@ -37,7 +23,7 @@ export async function getGOPVideo(req: Request, res: Response) {
     }
 
     try {
-        const process = await getVideoSegmentCommand(videoFilePath, iFrameMetadata, groupIndex, res);
+        const process = await getVideoSegmentCommand(req.params.videoFilePath, iFrameMetadata, groupIndex, res);
         const passThrough = new PassThrough();
 
         process.on('start', (commandLine) => {
