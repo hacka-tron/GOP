@@ -1,2 +1,3 @@
 src/videos/*
+!videos/
 node_modules
