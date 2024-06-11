@@ -4,14 +4,12 @@ import http from 'http';
 import dotenv from 'dotenv';
 
 import videoRoutes from './routes/videos';
-import { setFFmpegBinaryPath } from './utils/ffmpeg';
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const app = express();
 const server = http.createServer(app);
-setFFmpegBinaryPath();
 
 app.use('/videos', videoRoutes)
 

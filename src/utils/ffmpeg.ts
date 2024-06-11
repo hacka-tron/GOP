@@ -3,18 +3,8 @@ import path from 'path';
 import { exec } from 'child_process';
 import { Response } from 'express';
 import ffmpeg from 'fluent-ffmpeg';
-import { PassThrough } from 'stream';
-import Ffmpeg from 'fluent-ffmpeg';
 
 const VIDEOS_PATH = '../../videos/';
-
-export function setFFmpegBinaryPath() {
-    if (!process.env.FFMPEG_BINARY_PATH) {
-        throw new Error('Please set the environment variable for "process.env.FFMPEG_BINARY_PATH"');
-    }
-    ffmpeg.setFfmpegPath(path.join(process.env.FFMPEG_BINARY_PATH, 'ffmpeg.exe'));
-    ffmpeg.setFfprobePath(path.join(process.env.FFMPEG_BINARY_PATH, 'ffprobe.exe'));
-}
 
 export function checkVideoNameAndGetPath(name: string): string | undefined {
     const filePath = path.join(__dirname, VIDEOS_PATH, name);
@@ -57,12 +47,7 @@ export async function getVideoDuration(videoFilePath: string) {
     });
 }
 
-export async function getVideoSegmentCommand(videoFilePath: string, iFrameMetadata: any[], groupIndex: number, res: Response): Promise<ffmpeg.FfmpegCommand> {
-    const videoDuration = Number(await getVideoDuration(videoFilePath));
-    const startTime = Number(iFrameMetadata[groupIndex].pts_time);
-    const endTime = (groupIndex + 1 < iFrameMetadata.length) ? Number(iFrameMetadata[groupIndex + 1].pts_time) : videoDuration;
-    const duration = endTime - startTime;
-
+export async function getVideoSegmentCommand(videoFilePath: string, startTime: number, duration: number): Promise<ffmpeg.FfmpegCommand> {
     // Configure ffmpeg to stream the video directly
     return ffmpeg(videoFilePath)
         .setStartTime(startTime)
