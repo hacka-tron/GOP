@@ -85,7 +85,7 @@ export async function getAllGOPVideos(req: Request, res: Response) {
             const endTime = (groupIndex + 1 < iFrameMetadata.length) ? Number(iFrameMetadata[groupIndex + 1].pts_time) : videoDuration;
             const duration = endTime - startTime;
 
-            const process = await getVideoSegmentCommand(req.params.videoFilePath, startTime, duration);
+            const process = await getVideoSegmentCommand(videoFilePath, startTime, duration);
             const passThrough = new PassThrough();
 
             process.on('error', (err, stdout, stderr) => {
