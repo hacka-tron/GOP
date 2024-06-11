@@ -64,7 +64,7 @@ export async function getAllGOPVideos(req: Request, res: Response) {
             <style>
                 .video-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                    grid-template-columns: repeat(auto-fill, 300px);
                 }
                 .video-item {
                     display: flex;

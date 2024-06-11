@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
-import { Response } from 'express';
 import ffmpeg from 'fluent-ffmpeg';
 
 const VIDEOS_PATH = '../../videos/';
