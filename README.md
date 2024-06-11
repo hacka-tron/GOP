@@ -1,5 +1,5 @@
 # Group Of Pictures
-This project is an HTTP server which aims to let users run an HTTP server which interacts with video data. 
+This project is an HTTP server which lets users interact with and view video data based on their group of pictures. 
 
 # Getting Started
 Beyond the standard setup of downloading Node and the various dependencies, this Node server has a couple more requirements to get started.
